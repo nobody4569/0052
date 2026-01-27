@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>0052 富邦科技成分股估值模型</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 900px; margin: auto; padding: 20px; background: #f0f2f5; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        h1 { color: #1a472a; border-left: 8px solid #27ae60; padding-left: 15px; }
+        .formula-box { background: #f1f8e9; border: 1px solid #c5e1a5; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .formula { font-size: 1.4em; color: #2e7d32; text-align: center; display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: #27ae60; color: white; padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>0052 成分股：毛利率對本益比分析 (2025.12)</h1>
+    
+    <canvas id="twChart" height="400"></canvas>
+
+    <div class="formula-box">
+        <h3>台股半導體估值模型 (0052 專用)</h3>
+        <p>基於 2025 年末數據，台股估值邏輯趨於穩定保守：</p>
+        <span class="formula">預估 P/E = 0.15 × (Gross Margin %) + 13.2</span>
+        <p><small>*註：台股高毛利公司（如聯發科）受限於產業循環，溢價斜率較美股平緩。</small></p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>代號</th>
+                <th>名稱</th>
+                <th>毛利率</th>
+                <th>計算 P/E</th>
+                <th>狀態</th>
+            </tr>
+        </thead>
+        <tbody id="twTable"></tbody>
+    </table>
+</div>
+
+<script>
+    const twData = [
+        { id: '2330', name: '台積電', gm: 58.5, pe: 22.1 },
+        { id: '2454', name: '聯發科', gm: 49.0, pe: 18.8 },
+        { id: '2379', name: '瑞昱', gm: 45.0, pe: 18.1 },
+        { id: '3034', name: '聯詠', gm: 41.5, pe: 14.4 },
+        { id: '3711', name: '日月光', gm: 17.5, pe: 15.2 },
+        { id: '2317', name: '鴻海', gm: 6.5, pe: 16.3 },
+        { id: '2303', name: '聯電', gm: 32.0, pe: 11.5 }
+    ];
+
+    const tbody = document.getElementById('twTable');
+    twData.forEach(d => {
+        const status = d.pe < (0.15 * d.gm + 13.2) ? '<span style="color:red">相對低估</span>' : '合理';
+        tbody.innerHTML += `<tr><td>${d.id}</td><td>${d.name}</td><td>${d.gm}%</td><td>${d.pe}</td><td>${status}</td></tr>`;
+    });
+
+    new Chart(document.getElementById('twChart'), {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: '0052 成分股數據點',
+                data: twData.map(d => ({ x: d.gm, y: d.pe, label: d.name })),
+                backgroundColor: '#27ae60'
+            }]
+        },
+        options: {
+            scales: {
+                x: { title: { display: true, text: '毛利率 (%)' } },
+                y: { title: { display: true, text: '本益比 (P/E)' } }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
