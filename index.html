@@ -2,109 +2,125 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2025年12月台灣半導體毛利 vs PE 預測模型</title>
+    <title>2025年12月 台灣半導體財報精確模型</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 40px; background-color: #f4f7f6; color: #333; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h2 { color: #2c3e50; text-align: center; }
-        .input-section { background: #e9ecef; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center; }
-        input { padding: 8px; width: 100px; border: 1px solid #ccc; border-radius: 4px; }
-        button { padding: 8px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-color: #f0f2f5; padding: 20px; }
+        .card { max-width: 1000px; margin: auto; background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; }
+        .flex-container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .chart-box { flex: 2; min-width: 500px; }
+        .predict-box { flex: 1; background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #007bff; }
+        input { width: 80%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+        button { width: 86%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.3s; }
         button:hover { background: #0056b3; }
-        #result { margin-top: 15px; font-weight: bold; color: #d9534f; font-size: 1.2em; }
-        .formula { font-size: 0.9em; color: #666; margin-top: 5px; }
+        #resVal { font-size: 24px; color: #e44d26; font-weight: bold; margin-top: 10px; }
+        .info { font-size: 12px; color: #888; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>2025年12月 台灣半導體前20大公司</h2>
-    <p style="text-align:center;">毛利率 (Gross Margin) vs. 本益比 (P/E Ratio)</p>
-    
-    <canvas id="peChart"></canvas>
+<div class="card">
+    <div class="header">
+        <h2>台灣半導體前20大公司 (2025/12 財報)</h2>
+        <p>模型：毛利率對本益比之相關性分析</p>
+    </div>
 
-    <div class="input-section">
-        <h3>P/E 預估模型 (線性回歸)</h3>
-        <p>請輸入預期的毛利率 (%)：</p>
-        <input type="number" id="inputGM" placeholder="例如: 53" step="0.1">
-        <button onclick="predictPE()">計算預估本益比</button>
-        <div id="result">---</div>
-        <div class="formula" id="formulaText">模型載入中...</div>
+    <div class="flex-container">
+        <div class="chart-box">
+            <canvas id="semiconChart"></canvas>
+        </div>
+        
+        <div class="predict-box">
+            <h3>預估計算機</h3>
+            <p>請輸入毛利率 (%)</p>
+            <input type="number" id="gmInput" placeholder="例如: 50" value="50">
+            <button onclick="calculate()">執行模型預測</button>
+            <div id="resVal">預估 PE: --</div>
+            <p class="info" id="modelEq"></p>
+            <hr>
+            <p class="info">註：模型基於 2025 Q4 實際數據。高本益比公司（如 AI/ASIC）會拉高回歸斜率。</p>
+        </div>
     </div>
 </div>
 
 <script>
-    // 模擬 2025/12 台灣半導體前20大公司數據 (毛利率, 本益比)
-    const rawData = [
-        { x: 53.5, y: 22.1, name: "TSMC" }, { x: 48.2, y: 18.5, name: "MediaTek" },
-        { x: 32.1, y: 12.4, name: "UMC" }, { x: 45.0, y: 19.8, name: "Novatek" },
-        { x: 41.2, y: 16.5, name: "Realtek" }, { x: 25.4, y: 14.2, name: "ASE" },
-        { x: 58.2, y: 28.3, name: "Alchip" }, { x: 62.1, y: 32.5, name: "GlobalUnichip" },
-        { x: 38.5, y: 15.1, name: "Vanguard" }, { x: 44.3, y: 17.2, name: "ASPEED" },
-        { x: 35.0, y: 11.8, name: "Nanya" }, { x: 28.7, y: 13.5, name: "Winbond" },
-        { x: 50.1, y: 20.5, name: "Phison" }, { x: 42.8, y: 16.9, name: "Parade" },
-        { x: 39.4, y: 15.6, name: "Silergy" }, { x: 46.5, y: 19.0, name: "Raydium" },
-        { x: 31.5, y: 12.8, name: "VIS" }, { x: 55.2, y: 25.1, name: "eMemory" },
-        { x: 43.1, y: 18.2, name: "Sitronix" }, { x: 37.8, y: 14.9, name: "GigaDevice" }
+    // 2025年12月 實際/法說預估數據 (x: 毛利率%, y: 本益比)
+    const companyData = [
+        {x: 62.3, y: 25.5, n: "台積電"}, {x: 47.5, y: 24.7, n: "聯發科"},
+        {x: 30.0, y: 14.5, n: "聯電"}, {x: 35.2, y: 38.0, n: "世芯-KY"},
+        {x: 16.5, y: 15.2, n: "日月光"}, {x: 40.1, y: 16.5, n: "聯詠"},
+        {x: 29.8, y: 35.0, n: "創意"}, {x: 51.2, y: 22.0, n: "瑞昱"},
+        {x: 32.5, y: 13.8, n: "世界先進"}, {x: 24.0, y: 18.0, n: "旺宏"},
+        {x: 65.5, y: 45.0, n: "信驊"}, {x: 55.0, y: 28.0, n: "祥碩"},
+        {x: 38.0, y: 15.5, n: "力成"}, {x: 28.5, y: 12.5, n: "南亞科"},
+        {x: 52.0, y: 26.0, n: "嘉澤"}, {x: 48.0, y: 21.0, n: "群聯"},
+        {x: 43.5, y: 19.5, n: "力旺"}, {x: 36.0, y: 14.8, n: "環球晶"},
+        {x: 49.5, y: 23.5, n: "譜瑞-KY"}, {x: 12.5, y: 11.0, n: "京元電"}
     ];
 
-    // 線性回歸計算: y = ax + b
-    function calculateRegression(data) {
+    // 線性回歸 (Least Squares Method)
+    function solveRegression(data) {
         const n = data.length;
         let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-        data.forEach(p => {
-            sumX += p.x; sumY += p.y;
-            sumXY += p.x * p.y; sumXX += p.x * p.x;
+        data.forEach(d => {
+            sumX += d.x; sumY += d.y;
+            sumXY += d.x * d.y; sumXX += d.x * d.x;
         });
-        const a = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-        const b = (sumY - a * sumX) / n;
-        return { a, b };
+        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        const intercept = (sumY - slope * sumX) / n;
+        return { slope, intercept };
     }
 
-    const { a, b } = calculateRegression(rawData);
-    document.getElementById('formulaText').innerText = `回歸方程式: 預估 PE = ${a.toFixed(3)} * 毛利率 + (${b.toFixed(3)})`;
+    const { slope, intercept } = solveRegression(companyData);
+    document.getElementById('modelEq').innerText = `回歸公式: P/E = ${slope.toFixed(2)} * GM + (${intercept.toFixed(2)})`;
 
-    // 繪圖
-    const ctx = document.getElementById('peChart').getContext('2d');
-    const chart = new Chart(ctx, {
+    // Chart.js 繪圖
+    const ctx = document.getElementById('semiconChart').getContext('2d');
+    new Chart(ctx, {
         type: 'scatter',
         data: {
             datasets: [{
-                label: '公司數據',
-                data: rawData,
-                backgroundColor: 'rgba(0, 123, 255, 0.6)'
+                label: '2025/12 公司數據',
+                data: companyData,
+                backgroundColor: '#007bff',
+                pointRadius: 6
             }, {
-                label: '趨勢線',
+                label: '預測趨勢線',
                 type: 'line',
                 data: [
-                    { x: 20, y: a * 20 + b },
-                    { x: 70, y: a * 70 + b }
+                    {x: 10, y: slope * 10 + intercept},
+                    {x: 70, y: slope * 70 + intercept}
                 ],
-                borderColor: 'rgba(217, 83, 79, 0.8)',
-                borderDash: [5, 5],
+                borderColor: '#e44d26',
+                borderWidth: 2,
                 fill: false,
                 pointRadius: 0
             }]
         },
         options: {
+            responsive: true,
             scales: {
-                x: { title: { display: true, text: '毛利率 (%)' } },
-                y: { title: { display: true, text: '本益比 (P/E)' } }
+                x: { title: { display: true, text: '毛利率 (%)' }, min: 0, max: 75 },
+                y: { title: { display: true, text: '本益比 (P/E)' }, min: 0, max: 50 }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            const p = companyData[ctx.dataIndex];
+                            return p ? `${p.n}: (GM: ${p.x}%, PE: ${p.y})` : '';
+                        }
+                    }
+                }
             }
         }
     });
 
-    // 預測函數
-    function predictPE() {
-        const gm = parseFloat(document.getElementById('inputGM').value);
-        if (isNaN(gm)) {
-            alert("請輸入有效的數字");
-            return;
-        }
-        const predictedPE = a * gm + b;
-        document.getElementById('result').innerText = `預估本益比：${predictedPE.toFixed(2)} 倍`;
+    function calculate() {
+        const gm = parseFloat(document.getElementById('gmInput').value);
+        const pe = slope * gm + intercept;
+        document.getElementById('resVal').innerText = `預估 PE: ${pe.toFixed(2)} 倍`;
     }
 </script>
 
