@@ -3,123 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>0052 富邦科技成分股估值模型分析</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <title>2025年12月台灣半導體毛利 vs PE 預測模型</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; line-height: 1.6; color: #333; max-width: 1000px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1 { color: #1a472a; border-left: 8px solid #27ae60; padding-left: 15px; margin-bottom: 20px; }
-        .chart-container { position: relative; height: 450px; width: 100%; margin-bottom: 40px; }
-        .formula-box { background-color: #e8f5e9; border-left: 5px solid #27ae60; padding: 20px; margin-top: 30px; border-radius: 4px; }
-        .formula { font-family: "Times New Roman", serif; font-size: 1.5em; font-weight: bold; color: #2e7d32; text-align: center; display: block; margin: 15px 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: center; }
-        th { background-color: #27ae60; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .low-value { color: #d32f2f; font-weight: bold; }
+        body { font-family: sans-serif; margin: 40px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; text-align: center; }
+        .input-section { background: #e9ecef; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center; }
+        input { padding: 8px; width: 100px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 8px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #result { margin-top: 15px; font-weight: bold; color: #d9534f; font-size: 1.2em; }
+        .formula { font-size: 0.9em; color: #666; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>0052 富邦科技：毛利率對本益比關係圖 (2025.12)</h1>
-    <p>數據基準：2025年12月發布之財務報告與收盤價</p>
+    <h2>2025年12月 台灣半導體前20大公司</h2>
+    <p style="text-align:center;">毛利率 (Gross Margin) vs. 本益比 (P/E Ratio)</p>
+    
+    <canvas id="peChart"></canvas>
 
-    <div class="chart-container">
-        <canvas id="twChart"></canvas>
+    <div class="input-section">
+        <h3>P/E 預估模型 (線性回歸)</h3>
+        <p>請輸入預期的毛利率 (%)：</p>
+        <input type="number" id="inputGM" placeholder="例如: 53" step="0.1">
+        <button onclick="predictPE()">計算預估本益比</button>
+        <div id="result">---</div>
+        <div class="formula" id="formulaText">模型載入中...</div>
     </div>
-
-    <div class="formula-box">
-        <h2>數學模型推導</h2>
-        <p>經由 0052 前 30 大成分股數據擬合，台股科技股的估值邏輯如下：</p>
-        <span class="formula">預估 P/E = 0.15 × (Gross Margin %) + 13.2</span>
-        <p>不同於美股的指數級增長，台股權值股在毛利率提升時，本益比呈現平穩的線性成長。這反映了台股投資人對於獲利穩定度與股息發放的重視。</p>
-    </div>
-
-    <h2>成分股明細與模型比對</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>股票代碼</th>
-                <th>名稱</th>
-                <th>毛利率 (%)</th>
-                <th>2025 EPS</th>
-                <th>計算 P/E</th>
-                <th>模型狀態</th>
-            </tr>
-        </thead>
-        <tbody id="twTable"></tbody>
-    </table>
 </div>
 
 <script>
-    // 2025年12月模擬數據 (0052代表成分股)
-    const twData = [
-        { id: '2330', name: '台積電', gm: 58.5, eps: 52.0, pe: 22.1 },
-        { id: '2454', name: '聯發科', gm: 49.0, eps: 72.0, pe: 18.8 },
-        { id: '2379', name: '瑞昱', gm: 45.0, eps: 32.0, pe: 18.1 },
-        { id: '3034', name: '聯詠', gm: 41.5, eps: 45.0, pe: 14.4 },
-        { id: '3711', name: '日月光', gm: 17.5, eps: 11.5, pe: 15.2 },
-        { id: '2317', name: '鴻海', gm: 6.5, eps: 13.5, pe: 16.3 },
-        { id: '2303', name: '聯電', gm: 32.0, eps: 4.5, pe: 11.5 },
-        { id: '2382', name: '廣達', gm: 8.2, eps: 15.0, pe: 18.5 },
-        { id: '2408', name: '南亞科', gm: 12.0, eps: 1.2, pe: 45.0 } // 異常值點
+    // 模擬 2025/12 台灣半導體前20大公司數據 (毛利率, 本益比)
+    const rawData = [
+        { x: 53.5, y: 22.1, name: "TSMC" }, { x: 48.2, y: 18.5, name: "MediaTek" },
+        { x: 32.1, y: 12.4, name: "UMC" }, { x: 45.0, y: 19.8, name: "Novatek" },
+        { x: 41.2, y: 16.5, name: "Realtek" }, { x: 25.4, y: 14.2, name: "ASE" },
+        { x: 58.2, y: 28.3, name: "Alchip" }, { x: 62.1, y: 32.5, name: "GlobalUnichip" },
+        { x: 38.5, y: 15.1, name: "Vanguard" }, { x: 44.3, y: 17.2, name: "ASPEED" },
+        { x: 35.0, y: 11.8, name: "Nanya" }, { x: 28.7, y: 13.5, name: "Winbond" },
+        { x: 50.1, y: 20.5, name: "Phison" }, { x: 42.8, y: 16.9, name: "Parade" },
+        { x: 39.4, y: 15.6, name: "Silergy" }, { x: 46.5, y: 19.0, name: "Raydium" },
+        { x: 31.5, y: 12.8, name: "VIS" }, { x: 55.2, y: 25.1, name: "eMemory" },
+        { x: 43.1, y: 18.2, name: "Sitronix" }, { x: 37.8, y: 14.9, name: "GigaDevice" }
     ];
 
-    // 渲染表格
-    const tbody = document.getElementById('twTable');
-    twData.forEach(d => {
-        const modelPe = (0.15 * d.gm + 13.2).toFixed(1);
-        const status = d.pe < modelPe ? '<span class="low-value">相對低估</span>' : '合理/反映預期';
-        tbody.innerHTML += `<tr>
-            <td>${d.id}</td>
-            <td>${d.name}</td>
-            <td>${d.gm}%</td>
-            <td>$${d.eps}</td>
-            <td>${d.pe}</td>
-            <td>${status}</td>
-        </tr>`;
-    });
+    // 線性回歸計算: y = ax + b
+    function calculateRegression(data) {
+        const n = data.length;
+        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+        data.forEach(p => {
+            sumX += p.x; sumY += p.y;
+            sumXY += p.x * p.y; sumXX += p.x * p.x;
+        });
+        const a = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        const b = (sumY - a * sumX) / n;
+        return { a, b };
+    }
 
-    // 渲染圖表
-    const ctx = document.getElementById('twChart').getContext('2d');
-    new Chart(ctx, {
+    const { a, b } = calculateRegression(rawData);
+    document.getElementById('formulaText').innerText = `回歸方程式: 預估 PE = ${a.toFixed(3)} * 毛利率 + (${b.toFixed(3)})`;
+
+    // 繪圖
+    const ctx = document.getElementById('peChart').getContext('2d');
+    const chart = new Chart(ctx, {
         type: 'scatter',
         data: {
             datasets: [{
-                label: '0052 成分股數據',
-                data: twData.map(d => ({ x: d.gm, y: d.pe, label: d.name })),
-                backgroundColor: '#27ae60',
-                pointRadius: 7
+                label: '公司數據',
+                data: rawData,
+                backgroundColor: 'rgba(0, 123, 255, 0.6)'
             }, {
-                label: '線性趨勢模型',
+                label: '趨勢線',
                 type: 'line',
                 data: [
-                    { x: 5, y: (0.15 * 5 + 13.2) },
-                    { x: 60, y: (0.15 * 60 + 13.2) }
+                    { x: 20, y: a * 20 + b },
+                    { x: 70, y: a * 70 + b }
                 ],
-                borderColor: 'rgba(46, 125, 50, 0.5)',
+                borderColor: 'rgba(217, 83, 79, 0.8)',
                 borderDash: [5, 5],
                 fill: false,
                 pointRadius: 0
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
             scales: {
-                x: { title: { display: true, text: '毛利率 (Gross Margin %)' } },
-                y: { title: { display: true, text: '本益比 (P/E Ratio)' } }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: (ctx) => `${ctx.raw.label || '趨勢線'}: (GM ${ctx.raw.x}%, PE ${ctx.raw.y.toFixed(1)})`
-                    }
-                }
+                x: { title: { display: true, text: '毛利率 (%)' } },
+                y: { title: { display: true, text: '本益比 (P/E)' } }
             }
         }
     });
+
+    // 預測函數
+    function predictPE() {
+        const gm = parseFloat(document.getElementById('inputGM').value);
+        if (isNaN(gm)) {
+            alert("請輸入有效的數字");
+            return;
+        }
+        const predictedPE = a * gm + b;
+        document.getElementById('result').innerText = `預估本益比：${predictedPE.toFixed(2)} 倍`;
+    }
 </script>
 
 </body>
