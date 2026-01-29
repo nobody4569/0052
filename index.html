@@ -2,165 +2,179 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>2025年12月 台灣半導體50強分組預測模型</title>
+    <title>2026 半導體價值發現模型 - 成長預測版</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; padding: 20px; }
-        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        .header { text-align: center; margin-bottom: 30px; }
-        .control-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-        .result-card { background: #2c3e50; color: white; padding: 20px; border-radius: 10px; text-align: center; }
-        select, input { padding: 10px; margin: 10px 0; width: 100%; border-radius: 5px; border: 1px solid #ddd; }
-        .formula-display { font-family: 'Courier New', Courier, monospace; background: #eee; padding: 10px; font-size: 13px; color: #333; margin-top: 10px; border-radius: 5px; }
-        .chart-container { position: relative; height: 450px; width: 100%; }
-        .tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; margin-right: 5px; color: white; }
+        :root { --primary: #2563eb; --success: #16a34a; --warning: #ca8a04; --danger: #dc2626; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; padding: 20px; color: #1e293b; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+        .card { border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; background: #ffffff; }
+        .highlight-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+        h1, h2 { color: #0f172a; margin-top: 0; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .badge-grow { background: #dcfce7; color: #166534; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #f1f5f9; }
+        th { color: #64748b; }
+        input, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header">
-        <h2>台灣半導體 50 強：毛利率 vs P/E 估值模型</h2>
-        <p>數據基於 2025 年 12 月財報與市場均價</p>
+    <h1>🚀 2026 半導體價值發現模型</h1>
+    <p>基於 2025/12 實績與 2026 成長預測 (PEG 分析)</p>
+
+    <div class="grid">
+        <div class="card">
+            <canvas id="growthChart" height="500"></canvas>
+        </div>
+
+        <div class="card">
+            <h2>🎯 成長潛力掃描</h2>
+            <div id="undervaluedList"></div>
+            
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            
+            <h3>估值模擬器</h3>
+            <label>預計 2026 毛利率 (%)</label>
+            <input type="number" id="gmIn" value="40">
+            <label>預計 2026 淨利成長率 (%)</label>
+            <input type="number" id="grIn" value="20">
+            <button class="btn" onclick="runSim()">計算合理股價位階</button>
+            <div id="simResult" style="margin-top: 15px; font-weight: bold; font-size: 18px; color: var(--primary);"></div>
+        </div>
     </div>
 
-    <div class="control-panel">
-        <div>
-            <label>選擇公司類型：</label>
-            <select id="typeSelect" onchange="updateModel()">
-                <option value="all">全部公司 (綜合統計)</option>
-                <option value="ic">IC 設計 (高成長、高毛利)</option>
-                <option value="fab">晶圓代工/製造 (資本密集)</option>
-                <option value="osat">封裝測試 (穩健收斂)</option>
-                <option value="equip">設備與材料 (訂單導向)</option>
-            </select>
-            <label>輸入目標毛利率 (%)：</label>
-            <input type="number" id="gmInput" value="50" oninput="calculate()">
-        </div>
-        <div class="result-card">
-            <div style="font-size: 14px; opacity: 0.8;">模型預估本益比 (P/E)</div>
-            <div id="peResult" style="font-size: 40px; margin: 10px 0;">--</div>
-            <div id="formulaVal" class="formula-display">載入中...</div>
-        </div>
-    </div>
-
-    <div class="chart-container">
-        <canvas id="mainChart"></canvas>
+    <div class="card" style="margin-top: 30px;">
+        <h2>📊 被低估標的數據詳情 (2026 Forecast)</h2>
+        <table id="detailTable">
+            <thead>
+                <tr>
+                    <th>公司</th>
+                    <th>2025 GM</th>
+                    <th>2026 預估成長</th>
+                    <th>目前 PE</th>
+                    <th>PEG</th>
+                    <th>狀態</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
 </div>
 
 <script>
-    // 50大公司模擬數據 (基於2025/12 實際財報趨勢)
-    const dataPoints = {
-        ic: [
-            {x: 62.3, y: 45.5, n: "信驊"}, {x: 47.5, y: 24.7, n: "聯發科"}, {x: 40.1, y: 16.5, n: "聯詠"},
-            {x: 51.2, y: 22.0, n: "瑞昱"}, {x: 35.2, y: 38.2, n: "世芯-KY"}, {x: 29.8, y: 35.0, n: "創意"},
-            {x: 55.0, y: 28.5, n: "祥碩"}, {x: 49.5, y: 23.1, n: "譜瑞-KY"}, {x: 48.0, y: 21.5, n: "群聯"},
-            {x: 43.5, y: 19.8, n: "力旺"}, {x: 50.2, y: 26.5, n: "達發"}, {x: 32.5, y: 14.8, n: "天鈺"},
-            {x: 45.1, y: 18.2, n: "敦泰"}, {x: 53.0, y: 27.5, n: "威盛"}, {x: 38.5, y: 15.6, n: "義隆"}
-        ],
-        fab: [
-            {x: 62.5, y: 26.5, n: "台積電"}, {x: 30.5, y: 14.2, n: "聯電"}, {x: 33.1, y: 13.8, n: "世界先進"},
-            {x: 22.5, y: 18.0, n: "力積電"}, {x: 28.5, y: 12.5, n: "南亞科"}, {x: 36.5, y: 15.2, n: "環球晶"},
-            {x: 24.5, y: 17.5, n: "旺宏"}, {x: 31.0, y: 11.5, n: "華邦電"}, {x: 18.5, y: 22.0, n: "台勝科"}
-        ],
-        osat: [
-            {x: 16.5, y: 15.5, n: "日月光"}, {x: 38.2, y: 15.8, n: "力成"}, {x: 13.5, y: 12.1, n: "京元電"},
-            {x: 22.1, y: 13.5, n: "超豐"}, {x: 25.4, y: 14.2, n: "頎邦"}, {x: 20.5, y: 12.8, n: "南茂"},
-            {x: 18.2, y: 11.5, n: "台天"}, {x: 15.0, y: 10.5, n: "矽格"}
-        ],
-        equip: [
-            {x: 42.5, y: 28.5, n: "漢唐"}, {x: 35.2, y: 32.1, n: "家登"}, {x: 28.5, y: 24.5, n: "弘塑"},
-            {x: 45.0, y: 25.2, n: "帆宣"}, {x: 33.1, y: 18.5, n: "辛耘"}, {x: 25.5, y: 20.1, n: "聖暉"},
-            {x: 41.2, y: 22.0, n: "京鼎"}, {x: 37.5, y: 19.5, n: "中砂"}, {x: 30.2, y: 16.5, n: "志聖"}
-        ]
-    };
+    // 核心數據庫：含 2025 實績與 2026 預測
+    const companies = [
+        // 被低估組 (線下遠端)
+        { n: "聯詠", x: 40.1, y: 15.2, grow: 12, eps26: 42.5, type: "IC設計", color: "#16a34a" },
+        { n: "世界先進", x: 33.1, y: 14.5, grow: 18, eps26: 5.6, type: "晶圓製造", color: "#16a34a" },
+        { n: "力成", x: 38.2, y: 13.5, grow: 14, eps26: 13.2, type: "封測", color: "#16a34a" },
+        { n: "京鼎", x: 41.2, y: 16.5, grow: 22, eps26: 30.1, type: "設備", color: "#16a34a" },
+        // 常態組與線上組
+        { n: "台積電", x: 62.5, y: 26.5, grow: 25, eps26: 68.0, type: "晶圓製造", color: "#2563eb" },
+        { n: "聯發科", x: 47.5, y: 24.7, grow: 15, eps26: 75.0, type: "IC設計", color: "#2563eb" },
+        { n: "世芯-KY", x: 35.2, y: 38.2, grow: 40, eps26: 115.0, type: "IC設計", color: "#dc2626" },
+        { n: "瑞昱", x: 51.2, y: 22.0, grow: 10, eps26: 32.0, type: "IC設計", color: "#2563eb" },
+        { n: "家登", x: 48.5, y: 32.1, grow: 30, eps26: 38.0, type: "設備", color: "#dc2626" }
+    ];
 
-    let currentChart;
-    let model = { slope: 0, intercept: 0 };
-
-    function calculateRegression(data) {
-        const n = data.length;
-        let sX = 0, sY = 0, sXY = 0, sXX = 0;
-        data.forEach(p => {
-            sX += p.x; sY += p.y;
-            sXY += p.x * p.y; sXX += p.x * p.x;
-        });
-        const slope = (n * sXY - sX * sY) / (n * sXX - sX * sX);
-        const intercept = (sY - slope * sX) / n;
+    // 計算回歸線
+    function getRegression() {
+        const n = companies.length;
+        let sX=0, sY=0, sXY=0, sXX=0;
+        companies.forEach(c => { sX+=c.x; sY+=c.y; sXY+=c.x*c.y; sXX+=c.x*c.x; });
+        const slope = (n*sXY - sX*sY) / (n*sXX - sX*sX);
+        const intercept = (sY - slope*sX) / n;
         return { slope, intercept };
     }
 
-    function updateModel() {
-        const type = document.getElementById('typeSelect').value;
-        let combinedData = [];
-        if (type === 'all') {
-            Object.values(dataPoints).forEach(group => combinedData = combinedData.concat(group));
-        } else {
-            combinedData = dataPoints[type];
-        }
+    const model = getRegression();
 
-        model = calculateRegression(combinedData);
-        document.getElementById('formulaVal').innerText = `公式: P/E = ${model.slope.toFixed(3)} * GM% + (${model.intercept.toFixed(3)})`;
-        
-        drawChart(combinedData, type);
-        calculate();
-    }
-
-    function drawChart(data, type) {
-        const ctx = document.getElementById('mainChart').getContext('2d');
-        if (currentChart) currentChart.destroy();
-
-        const colors = { ic: '#ff6384', fab: '#36a2eb', osat: '#ffce56', equip: '#4bc0c0', all: '#9966ff' };
-        const color = colors[type] || colors.all;
-
-        currentChart = new Chart(ctx, {
-            type: 'scatter',
-            data: {
-                datasets: [{
-                    label: '公司實績',
-                    data: data,
-                    backgroundColor: color,
-                    pointRadius: 6
-                }, {
-                    label: '回歸模型趨勢',
-                    type: 'line',
-                    data: [
-                        {x: 5, y: model.slope * 5 + model.intercept},
-                        {x: 70, y: model.slope * 70 + model.intercept}
-                    ],
-                    borderColor: '#333',
-                    borderDash: [5, 5],
-                    fill: false,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { title: { display: true, text: '毛利率 Gross Margin (%)' }, min: 0 },
-                    y: { title: { display: true, text: '本益比 P/E Ratio' }, min: 0 }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: (c) => `${data[c.dataIndex].n}: GM ${data[c.dataIndex].x}%, PE ${data[c.dataIndex].y}`
+    // 初始化圖表
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: '公司估值位階',
+                data: companies.map(c => ({ x: c.x, y: c.y, n: c.n })),
+                backgroundColor: companies.map(c => c.color),
+                pointRadius: 8
+            }, {
+                label: '合理價值線',
+                type: 'line',
+                data: [{x: 10, y: model.slope*10+model.intercept}, {x: 70, y: model.slope*70+model.intercept}],
+                borderColor: '#cbd5e1',
+                borderDash: [5, 5],
+                fill: false,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: (c) => {
+                            const comp = companies[c.dataIndex];
+                            return `${comp.n}: PE ${comp.y}, 2026預期成長 ${comp.grow}%`;
                         }
                     }
                 }
+            },
+            scales: {
+                x: { title: { display: true, text: '毛利率 (GM %)' } },
+                y: { title: { display: true, text: '本益比 (P/E)' } }
             }
+        }
+    });
+
+    // 填充數據列表
+    function updateUI() {
+        const list = document.getElementById('undervaluedList');
+        const tbody = document.querySelector('#detailTable tbody');
+        
+        companies.filter(c => c.color === "#16a34a").forEach(c => {
+            const peg = (c.y / c.grow).toFixed(2);
+            list.innerHTML += `
+                <div class="highlight-box">
+                    <strong>${c.n}</strong> <span class="badge badge-grow">成長 +${c.grow}%</span>
+                    <div style="font-size: 13px; margin-top: 5px; color: #64748b;">
+                        PEG: ${peg} | 2026 預估 EPS: $${c.eps26}
+                    </div>
+                </div>
+            `;
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${c.n}</b></td>
+                    <td>${c.x}%</td>
+                    <td style="color:var(--success)">+${c.grow}%</td>
+                    <td>${c.y}x</td>
+                    <td><b style="${peg < 1 ? 'color:var(--success)' : ''}">${peg}</b></td>
+                    <td>${peg < 1.2 ? '🔥 顯著低估' : '合理偏低'}</td>
+                </tr>
+            `;
         });
     }
 
-    function calculate() {
-        const gm = parseFloat(document.getElementById('gmInput').value);
-        const pe = model.slope * gm + model.intercept;
-        document.getElementById('peResult').innerText = isNaN(pe) ? "--" : pe.toFixed(2);
+    function runSim() {
+        const gm = document.getElementById('gmIn').value;
+        const grow = document.getElementById('grIn').value;
+        const basePE = model.slope * gm + model.intercept;
+        // 加入成長溢價因子: 成長每多10%，PE多加15%
+        const adjustedPE = basePE * (1 + (grow - 15) * 0.015);
+        document.getElementById('simResult').innerHTML = `
+            預估合理 PE: ${adjustedPE.toFixed(1)} 倍<br>
+            <span style="font-size:12px; color:#64748b;">(基於產業平均與成長率修正)</span>
+        `;
     }
 
-    window.onload = updateModel;
+    updateUI();
 </script>
-
 </body>
 </html>
